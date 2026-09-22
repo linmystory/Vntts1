@@ -8,15 +8,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: 18
 
       - name: Install dependencies
         run: npm install
+
+      - name: Prepare web assets
+        run: |
+          mkdir -p www
+          cp index.html www/
 
       - name: Add Android platform
         run: |
@@ -26,16 +31,16 @@ jobs:
       - name: Inject Native Plugin Files
         run: |
           TARGET_DIR=$(dirname $(find android/app/src/main/java -name "MainActivity.java"))
-          cp native-plugin/MainActivity.java $TARGET_DIR/
-          cp native-plugin/TtsFileSaverPlugin.kt $TARGET_DIR/
+          cp MainActivity.java $TARGET_DIR/
+          cp TtsFileSaverPlugin.kt $TARGET_DIR/
           mkdir -p android/app/src/main/res/xml
-          cp native-plugin/file_paths.xml android/app/src/main/res/xml/
+          cp file_paths.xml android/app/src/main/res/xml/
 
       - name: Sync Capacitor
         run: npx cap sync android
 
       - name: Setup Java JDK 17
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
@@ -47,7 +52,7 @@ jobs:
           ./gradlew assembleDebug
 
       - name: Upload APK Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: tts-app-debug
           path: android/app/build/outputs/apk/debug/app-debug.apk
