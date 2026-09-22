@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  File này chỉ cần thiết nếu bạn muốn hỗ trợ Android 9 (API 28) trở xuống.
+  Đặt tại: android/app/src/main/res/xml/file_paths.xml
+  (tạo thư mục "xml" nếu chưa có)
+-->
+<paths xmlns:android="http://schemas.android.com/apk/res/android">
+    <external-path name="music_root" path="Music/" />
+    <external-files-path name="external_files" path="." />
+    <cache-path name="cache" path="." />
+</paths>

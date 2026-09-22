@@ -1,0 +1,17 @@
+{
+  "name": "doc-van-ban-tts-app",
+  "version": "1.0.0",
+  "description": "Ứng dụng đọc văn bản bằng giọng nói (Text-to-Speech), có tính năng lưu file âm thanh WAV thật qua plugin native Android.",
+  "scripts": {
+    "sync": "npx cap sync android",
+    "open:android": "npx cap open android",
+    "build:android": "cd android && ./gradlew assembleDebug"
+  },
+  "dependencies": {
+    "@capacitor/core": "^6.1.2",
+    "@capacitor/android": "^6.1.2"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^6.1.2"
+  }
+}

@@ -1,0 +1,28 @@
+<!--
+  Đây KHÔNG PHẢI là file AndroidManifest.xml hoàn chỉnh — đây là các đoạn
+  bạn cần THÊM VÀO file android/app/src/main/AndroidManifest.xml đã có sẵn
+  (do Capacitor tự sinh ra khi chạy "npx cap add android").
+
+  Có 2 việc cần làm:
+  1) Thêm quyền ghi bộ nhớ ngoài — CHỈ cần cho Android 9 (API 28) trở xuống.
+     Từ Android 10 trở lên, plugin dùng MediaStore nên KHÔNG cần quyền này.
+  2) Khai báo FileProvider — CHỈ cần nếu bạn muốn hỗ trợ Android 9 trở xuống.
+     Nếu máy bạn test là Android 10+ (rất phổ biến hiện nay), có thể bỏ qua
+     toàn bộ phần FileProvider bên dưới.
+-->
+
+<!-- ========== 1) Thêm ngay dưới thẻ <manifest ...> mở đầu, TRƯỚC thẻ <application> ========== -->
+<uses-permission
+    android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+    android:maxSdkVersion="28" />
+
+<!-- ========== 2) Thêm bên trong thẻ <application ...> ... </application>, ngang hàng với <activity> ========== -->
+<provider
+    android:name="androidx.core.content.FileProvider"
+    android:authorities="${applicationId}.fileprovider"
+    android:exported="false"
+    android:grantUriPermissions="true">
+    <meta-data
+        android:name="android.support.FILE_PROVIDER_PATHS"
+        android:resource="@xml/file_paths" />
+</provider>

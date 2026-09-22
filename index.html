@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Đọc Văn Bản - Text to Speech</title>
+<style>
+  :root {
+    --bg-main: #0a0e17;
+    --bg-card: #131826;
+    --bg-input: #1a2133;
+    --accent: #00e5ff;
+    --accent-dim: #0097a7;
+    --accent-glow: rgba(0, 229, 255, 0.25);
+    --text-main: #e6f1ff;
+    --text-dim: #7d8aa3;
+    --danger: #ff4d6d;
+    --danger-dim: #b0233c;
+    --success: #00e676;
+    --border: #232c42;
+    --radius: 16px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    height: 100%;
+    background: var(--bg-main);
+    color: var(--text-main);
+    font-family: "Segoe UI", Roboto, -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+
+  body {
+    padding: env(safe-area-inset-top, 16px) 14px calc(env(safe-area-inset-bottom, 16px) + 14px);
+    background:
+      radial-gradient(circle at 20% 0%, rgba(0,229,255,0.08), transparent 40%),
+      radial-gradient(circle at 100% 30%, rgba(0,229,255,0.05), transparent 50%),
+      var(--bg-main);
+    min-height: 100%;
+  }
+
+  .app { max-width: 640px; margin: 0 auto; padding-bottom: 12px; }
+
+  header { text-align: center; padding: 10px 0 18px; }
+  header h1 {
+    font-size: 22px;
+    letter-spacing: 0.5px;
+    background: linear-gradient(90deg, var(--accent), #7c4dff);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  header p { color: var(--text-dim); font-size: 13px; margin-top: 4px; }
+
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-bottom: 14px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+  }
+
+  .card-title {
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--accent);
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  textarea {
+    width: 100%;
+    min-height: 180px;
+    max-height: 320px;
+    resize: vertical;
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    color: var(--text-main);
+    font-size: 15px;
+    line-height: 1.5;
+    padding: 12px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  textarea:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-glow);
+  }
+  textarea::placeholder { color: var(--text-dim); }
+
+  .textarea-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 8px;
+    font-size: 12px;
+    color: var(--text-dim);
+  }
+
+  #charCount.limit-near { color: #ffb300; }
+  #charCount.limit-max { color: var(--danger); }
+
+  .btn-clear-small {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: 0.2s;
+  }
+  .btn-clear-small:active { background: var(--bg-input); }
+
+  .field { margin-bottom: 14px; }
+  .field:last-child { margin-bottom: 0; }
+  .field label {
+    display: block;
+    font-size: 13px;
+    color: var(--text-dim);
+    margin-bottom: 6px;
+  }
+
+  select {
+    width: 100%;
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    color: var(--text-main);
+    padding: 12px;
+    border-radius: 10px;
+    font-size: 15px;
+    outline: none;
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%2300e5ff' stroke-width='2'><polyline points='6 9 12 15 18 9'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    padding-right: 36px;
+  }
+  select:focus { border-color: var(--accent); }
+
+  .grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .btn-main {
+    width: 100%;
+    padding: 18px;
+    font-size: 17px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    border: none;
+    border-radius: 14px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-dim));
+    color: #001018;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    box-shadow: 0 6px 20px var(--accent-glow);
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+  .btn-main:active { transform: scale(0.98); }
+  .btn-main.speaking {
+    background: linear-gradient(135deg, #ffb300, #ff7300);
+    box-shadow: 0 6px 20px rgba(255,140,0,0.3);
+  }
+  .btn-main:disabled { opacity: 0.5; }
+
+  .btn-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 10px;
+  }
+
+  .btn-sub {
+    padding: 14px;
+    font-size: 15px;
+    font-weight: 600;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: var(--bg-input);
+    color: var(--text-main);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: 0.15s;
+  }
+  .btn-sub:active { transform: scale(0.97); }
+  .btn-sub.danger { color: var(--danger); border-color: rgba(255,77,109,0.4); }
+  .btn-sub:disabled { opacity: 0.4; }
+  .btn-sub.processing {
+    color: var(--accent);
+    border-color: var(--accent);
+    opacity: 0.8;
+  }
+
+  .status-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--text-dim);
+    margin-top: 10px;
+    min-height: 18px;
+  }
+  .dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--text-dim);
+    flex-shrink: 0;
+  }
+  .dot.active { background: var(--success); box-shadow: 0 0 8px var(--success); animation: pulse 1s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.4;} }
+
+  .toast {
+    position: fixed;
+    left: 50%;
+    bottom: calc(env(safe-area-inset-bottom, 16px) + 20px);
+    transform: translateX(-50%) translateY(20px);
+    background: #1e2740;
+    border: 1px solid var(--accent);
+    color: var(--text-main);
+    padding: 12px 18px;
+    border-radius: 12px;
+    font-size: 14px;
+    max-width: 90%;
+    text-align: center;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s, transform 0.25s;
+    z-index: 999;
+  }
+  .toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+  .toast.error { border-color: var(--danger); }
+
+  footer { text-align: center; color: var(--text-dim); font-size: 11px; padding: 10px 0 4px; }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>🔊 ĐỌC VĂN BẢN</h1>
+    <p>Chuyển văn bản thành giọng nói - Miễn phí, không cần mạng</p>
+  </header>
+
+  <div class="card">
+    <div class="card-title">📝 Văn bản cần đọc</div>
+    <textarea id="textInput" maxlength="25000" placeholder="Nhập hoặc dán văn bản vào đây (tối đa 25.000 ký tự)..."></textarea>
+    <div class="textarea-footer">
+      <span id="charCount">0 / 25.000</span>
+      <button class="btn-clear-small" id="btnClearText">🗑 Xóa nhanh</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">🎙 Bộ đọc &amp; Giọng nói</div>
+    <div class="field">
+      <label for="engineSelect">Bộ đọc (Engine / Nhà cung cấp)</label>
+      <select id="engineSelect"></select>
+    </div>
+    <div class="field">
+      <label for="voiceSelect">Giọng nói</label>
+      <select id="voiceSelect"></select>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">⚙️ Tùy chỉnh giọng đọc</div>
+    <div class="grid-2">
+      <div class="field">
+        <label for="rateSelect">Tốc độ đọc</label>
+        <select id="rateSelect">
+          <option value="0.5">0.5x - Rất chậm</option>
+          <option value="0.75">0.75x - Chậm</option>
+          <option value="1.0" selected>1.0x - Bình thường</option>
+          <option value="1.25">1.25x - Nhanh</option>
+          <option value="1.5">1.5x - Khá nhanh</option>
+          <option value="2.0">2.0x - Rất nhanh</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="pitchSelect">Cao độ giọng</label>
+        <select id="pitchSelect">
+          <option value="0.5">0.5 - Trầm nhất</option>
+          <option value="0.75">0.75 - Trầm</option>
+          <option value="1.0" selected>1.0 - Bình thường</option>
+          <option value="1.25">1.25 - Cao</option>
+          <option value="1.5">1.5 - Khá cao</option>
+          <option value="1.75">1.75 - Cao hơn</option>
+          <option value="2.0">2.0 - Cao nhất</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <button class="btn-main" id="btnSpeak">
+      <span id="btnSpeakIcon">▶️</span>
+      <span id="btnSpeakLabel">ĐỌC VĂN BẢN</span>
+    </button>
+    <div class="btn-row">
+      <button class="btn-sub" id="btnReplay">🔁 Nghe lại</button>
+      <button class="btn-sub danger" id="btnStop" disabled>⏹ Dừng đọc</button>
+    </div>
+    <div class="btn-row" style="grid-template-columns: 1fr;">
+      <button class="btn-sub" id="btnSaveAudio">💾 Lưu âm thanh (file WAV)</button>
+    </div>
+    <div class="status-bar">
+      <span class="dot" id="statusDot"></span>
+      <span id="statusText">Sẵn sàng</span>
+    </div>
+  </div>
+
+  <footer>Ứng dụng chạy hoàn toàn ngoại tuyến trên thiết bị của bạn</footer>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function () {
+  const textInput = document.getElementById('textInput');
+  const charCount = document.getElementById('charCount');
+  const btnClearText = document.getElementById('btnClearText');
+  const engineSelect = document.getElementById('engineSelect');
+  const voiceSelect = document.getElementById('voiceSelect');
+  const rateSelect = document.getElementById('rateSelect');
+  const pitchSelect = document.getElementById('pitchSelect');
+  const btnSpeak = document.getElementById('btnSpeak');
+  const btnSpeakIcon = document.getElementById('btnSpeakIcon');
+  const btnSpeakLabel = document.getElementById('btnSpeakLabel');
+  const btnReplay = document.getElementById('btnReplay');
+  const btnStop = document.getElementById('btnStop');
+  const btnSaveAudio = document.getElementById('btnSaveAudio');
+  const statusDot = document.getElementById('statusDot');
+  const statusText = document.getElementById('statusText');
+  const toast = document.getElementById('toast');
+
+  const MAX_CHARS = 25000;
+  const CHUNK_MAX_LEN = 180;       // độ dài tối đa mỗi đoạn gửi cho TTS (an toàn cho engine Android)
+  const KEEPALIVE_MS = 4000;       // chu kỳ "đánh thức" chống bug Android tự treo sau ~15s
+
+  let voicesByEngine = {};   // { engineName: [voice, voice, ...] }
+  let allVoices = [];
+  let isSpeaking = false;    // đang thực sự phát âm thanh (không tính lúc tạm dừng)
+  let isPaused = false;      // đang ở trạng thái tạm dừng giữa chừng
+  let toastTimer = null;
+  let keepAliveTimer = null;
+
+  let speechQueue = [];      // mảng các câu/đoạn cần đọc
+  let queueIndex = 0;        // đoạn đang đọc / sẽ đọc tiếp
+  let currentSessionId = 0;  // để phân biệt phiên đọc cũ khi cancel
+
+  const synthSupported = 'speechSynthesis' in window && 'SpeechSynthesisUtterance' in window;
+
+  // ---------- Toast ----------
+  function showToast(msg, isError) {
+    clearTimeout(toastTimer);
+    toast.textContent = msg;
+    toast.classList.toggle('error', !!isError);
+    toast.classList.add('show');
+    toastTimer = setTimeout(() => toast.classList.remove('show'), 3000);
+  }
+
+  // ---------- Char counter ----------
+  function updateCharCount() {
+    const len = textInput.value.length;
+    charCount.textContent = len.toLocaleString('vi-VN') + ' / 25.000';
+    charCount.classList.remove('limit-near', 'limit-max');
+    if (len >= MAX_CHARS) {
+      charCount.classList.add('limit-max');
+    } else if (len >= MAX_CHARS * 0.9) {
+      charCount.classList.add('limit-near');
+    }
+  }
+  textInput.addEventListener('input', updateCharCount);
+
+  btnClearText.addEventListener('click', () => {
+    textInput.value = '';
+    updateCharCount();
+    textInput.focus();
+  });
+
+  // ---------- Engine name guess ----------
+  // Web Speech API không luôn cung cấp "engine name" rõ ràng.
+  // Ta nhóm giọng nói theo voice.name prefix / voiceURI domain / hoặc theo nhà cung cấp suy luận.
+  function guessEngineName(voice) {
+    const name = voice.name || '';
+    const uri = voice.voiceURI || '';
+    // Các mẫu phổ biến trên Android: "Google 한국어", "Samsung TTS", "Microsoft ...", v.v.
+    if (/google/i.test(name) || /google/i.test(uri)) return 'Google TTS';
+    if (/samsung/i.test(name) || /samsung/i.test(uri)) return 'Samsung TTS';
+    if (/microsoft/i.test(name) || /microsoft/i.test(uri)) return 'Microsoft TTS';
+    if (/amazon|polly/i.test(name)) return 'Amazon TTS';
+    if (/apple|siri/i.test(name)) return 'Apple TTS';
+    // Nếu voiceURI có dạng "com.xxx.yyy", lấy phần domain giữa làm tên bộ đọc
+    const match = uri.match(/^([a-zA-Z0-9]+(\.[a-zA-Z0-9]+){1,2})/);
+    if (match) return match[1];
+    return 'Bộ đọc hệ thống';
+  }
+
+  function isVietnameseVoice(voice) {
+    return /^vi(-|_|$)/i.test(voice.lang) || /viet/i.test(voice.name);
+  }
+
+  // ---------- Tách văn bản dài thành các đoạn nhỏ để đọc nối tiếp (queue) ----------
+  // Nhiều engine TTS trên Android sẽ cắt/bỏ qua văn bản nếu 1 utterance quá dài.
+  // Ta tách theo câu (dấu . ! ? … và xuống dòng), rồi gộp các câu ngắn lại
+  // cho tới khi gần chạm CHUNK_MAX_LEN, để giọng đọc không bị ngắt quá vụn.
+  function splitIntoChunks(text) {
+    const normalized = text.replace(/\r\n/g, '\n').trim();
+    if (!normalized) return [];
+
+    // Tách theo câu, giữ lại dấu câu
+    const rawSentences = normalized
+      .split(/(?<=[.!?…])\s+|\n+/)
+      .map(s => s.trim())
+      .filter(Boolean);
+
+    const chunks = [];
+    let buffer = '';
+
+    rawSentences.forEach(sentence => {
+      // Nếu bản thân 1 câu đã quá dài, cắt cứng theo CHUNK_MAX_LEN tại khoảng trắng gần nhất
+      if (sentence.length > CHUNK_MAX_LEN) {
+        if (buffer) { chunks.push(buffer); buffer = ''; }
+        let remaining = sentence;
+        while (remaining.length > CHUNK_MAX_LEN) {
+          let cut = remaining.lastIndexOf(' ', CHUNK_MAX_LEN);
+          if (cut <= 0) cut = CHUNK_MAX_LEN;
+          chunks.push(remaining.slice(0, cut).trim());
+          remaining = remaining.slice(cut).trim();
+        }
+        if (remaining) buffer = remaining;
+        return;
+      }
+
+      if ((buffer + ' ' + sentence).trim().length > CHUNK_MAX_LEN) {
+        if (buffer) chunks.push(buffer);
+        buffer = sentence;
+      } else {
+        buffer = (buffer ? buffer + ' ' : '') + sentence;
+      }
+    });
+
+    if (buffer) chunks.push(buffer);
+    return chunks;
+  }
+
+  // ---------- Load voices ----------
+  function loadVoices() {
+    allVoices = window.speechSynthesis.getVoices() || [];
+    if (allVoices.length === 0) return false;
+
+    voicesByEngine = {};
+    allVoices.forEach(v => {
+      const engine = guessEngineName(v);
+      if (!voicesByEngine[engine]) voicesByEngine[engine] = [];
+      voicesByEngine[engine].push(v);
+    });
+
+    // Sắp xếp: bộ đọc có giọng tiếng Việt lên trước
+    const engineNames = Object.keys(voicesByEngine).sort((a, b) => {
+      const aHasVi = voicesByEngine[a].some(isVietnameseVoice) ? 0 : 1;
+      const bHasVi = voicesByEngine[b].some(isVietnameseVoice) ? 0 : 1;
+      if (aHasVi !== bHasVi) return aHasVi - bHasVi;
+      return a.localeCompare(b);
+    });
+
+    engineSelect.innerHTML = '';
+    engineNames.forEach(engine => {
+      const opt = document.createElement('option');
+      opt.value = engine;
+      const viCount = voicesByEngine[engine].filter(isVietnameseVoice).length;
+      opt.textContent = engine + (viCount > 0 ? ' 🇻🇳 (' + viCount + ' giọng Việt)' : ' (' + voicesByEngine[engine].length + ' giọng)');
+      engineSelect.appendChild(opt);
+    });
+
+    if (engineNames.length > 0) {
+      engineSelect.value = engineNames[0];
+      populateVoiceSelect(engineNames[0]);
+    }
+    return true;
+  }
+
+  function populateVoiceSelect(engineName) {
+    const voices = voicesByEngine[engineName] || [];
+    // Ưu tiên giọng tiếng Việt lên đầu danh sách
+    const sorted = [...voices].sort((a, b) => {
+      const aVi = isVietnameseVoice(a) ? 0 : 1;
+      const bVi = isVietnameseVoice(b) ? 0 : 1;
+      if (aVi !== bVi) return aVi - bVi;
+      return a.name.localeCompare(b.name);
+    });
+
+    voiceSelect.innerHTML = '';
+    sorted.forEach(v => {
+      const opt = document.createElement('option');
+      opt.value = v.voiceURI;
+      const flag = isVietnameseVoice(v) ? '🇻🇳 ' : '';
+      opt.textContent = flag + v.name + ' (' + v.lang + ')';
+      voiceSelect.appendChild(opt);
+    });
+  }
+
+  engineSelect.addEventListener('change', () => {
+    populateVoiceSelect(engineSelect.value);
+  });
+
+  function getSelectedVoice() {
+    const uri = voiceSelect.value;
+    return allVoices.find(v => v.voiceURI === uri) || null;
+  }
+
+  // ---------- Speak logic (hàng đợi từng câu) ----------
+  function setSpeakingUI(speaking, paused) {
+    isSpeaking = speaking;
+    isPaused = !!paused;
+    btnSpeak.classList.toggle('speaking', speaking);
+    btnSpeakIcon.textContent = speaking ? '⏸' : '▶️';
+    btnSpeakLabel.textContent = speaking ? 'Đang đọc...' : (paused ? 'TIẾP TỤC ĐỌC' : 'ĐỌC VĂN BẢN');
+    btnStop.disabled = !speaking && !paused;
+    statusDot.classList.toggle('active', speaking);
+  }
+
+  function updateProgressStatus() {
+    if (speechQueue.length === 0) {
+      statusText.textContent = 'Sẵn sàng';
+      return;
+    }
+    const done = Math.min(queueIndex, speechQueue.length);
+    statusText.textContent = 'Đang đọc đoạn ' + done + ' / ' + speechQueue.length;
+  }
+
+  function stopKeepAlive() {
+    if (keepAliveTimer) {
+      clearInterval(keepAliveTimer);
+      keepAliveTimer = null;
+    }
+  }
+
+  // Khắc phục lỗi đã biết trên Chrome/WebView Android: speechSynthesis tự
+  // "đóng băng" và ngừng phát sau khoảng 15 giây nếu không có tương tác.
+  // Giải pháp: định kỳ gọi pause() rồi resume() để "đánh thức" engine.
+  function startKeepAlive() {
+    stopKeepAlive();
+    keepAliveTimer = setInterval(() => {
+      if (window.speechSynthesis.speaking && !window.speechSynthesis.paused) {
+        window.speechSynthesis.pause();
+        window.speechSynthesis.resume();
+      }
+    }, KEEPALIVE_MS);
+  }
+
+  function resetQueueState() {
+    speechQueue = [];
+    queueIndex = 0;
+    stopKeepAlive();
+  }
+
+  function speakNextChunk(sessionId) {
+    // Nếu phiên đọc này đã bị hủy bởi một lệnh mới hơn thì dừng lại
+    if (sessionId !== currentSessionId) return;
+
+    if (queueIndex >= speechQueue.length) {
+      // Đọc xong toàn bộ
+      stopKeepAlive();
+      setSpeakingUI(false, false);
+      statusText.textContent = 'Đã đọc xong';
+      return;
+    }
+
+    const chunk = speechQueue[queueIndex];
+    const utterance = new SpeechSynthesisUtterance(chunk);
+    const voice = getSelectedVoice();
+    if (voice) {
+      utterance.voice = voice;
+      utterance.lang = voice.lang;
+    } else {
+      utterance.lang = 'vi-VN';
+    }
+    utterance.rate = parseFloat(rateSelect.value);
+    utterance.pitch = parseFloat(pitchSelect.value);
+
+    utterance.onstart = () => {
+      if (sessionId !== currentSessionId) return;
+      setSpeakingUI(true, false);
+      updateProgressStatus();
+    };
+
+    utterance.onend = () => {
+      if (sessionId !== currentSessionId) return;
+      queueIndex += 1;
+      speakNextChunk(sessionId);
+    };
+
+    utterance.onerror = (e) => {
+      if (sessionId !== currentSessionId) return;
+      if (e.error === 'canceled' || e.error === 'interrupted') return;
+      stopKeepAlive();
+      setSpeakingUI(false, false);
+      showToast('Đã xảy ra lỗi khi đọc văn bản: ' + e.error, true);
+    };
+
+    window.speechSynthesis.speak(utterance);
+  }
+
+  function startSpeaking(text) {
+    if (!synthSupported) {
+      showToast('Thiết bị hoặc trình duyệt của bạn không hỗ trợ tính năng đọc giọng nói.', true);
+      return;
+    }
+    if (!text || !text.trim()) {
+      showToast('Vui lòng nhập văn bản trước khi đọc.', true);
+      return;
+    }
+
+    window.speechSynthesis.cancel();
+    currentSessionId += 1;
+    const sessionId = currentSessionId;
+
+    speechQueue = splitIntoChunks(text);
+    queueIndex = 0;
+
+    if (speechQueue.length === 0) {
+      showToast('Vui lòng nhập văn bản trước khi đọc.', true);
+      return;
+    }
+
+    startKeepAlive();
+    speakNextChunk(sessionId);
+  }
+
+  btnSpeak.addEventListener('click', () => {
+    if (!synthSupported) {
+      showToast('Thiết bị hoặc trình duyệt của bạn không hỗ trợ tính năng đọc giọng nói.', true);
+      return;
+    }
+
+    if (isSpeaking) {
+      // Đang đọc -> tạm dừng: hủy đoạn hiện tại, giữ nguyên vị trí queueIndex
+      // (không dùng speechSynthesis.pause() vì kém tin cậy trên nhiều máy Android)
+      stopKeepAlive();
+      window.speechSynthesis.cancel();
+      setSpeakingUI(false, true);
+      statusText.textContent = 'Đã tạm dừng (đoạn ' + (queueIndex + 1) + ' / ' + speechQueue.length + ')';
+      return;
+    }
+
+    if (isPaused && speechQueue.length > 0 && queueIndex < speechQueue.length) {
+      // Tiếp tục đọc từ đoạn đang dang dở
+      currentSessionId += 1;
+      const sessionId = currentSessionId;
+      startKeepAlive();
+      speakNextChunk(sessionId);
+      return;
+    }
+
+    startSpeaking(textInput.value);
+  });
+
+  btnReplay.addEventListener('click', () => {
+    const text = textInput.value;
+    if (!text || !text.trim()) {
+      showToast('Vui lòng nhập văn bản trước khi nghe lại.', true);
+      return;
+    }
+    startSpeaking(text);
+  });
+
+  btnStop.addEventListener('click', () => {
+    if (!synthSupported) return;
+    currentSessionId += 1; // vô hiệu hóa mọi callback đang chờ
+    window.speechSynthesis.cancel();
+    resetQueueState();
+    setSpeakingUI(false, false);
+    statusText.textContent = 'Đã dừng';
+  });
+
+  // Nếu người dùng chuyển ứng dụng / tắt màn hình, khi quay lại kiểm tra và
+  // đồng bộ lại UI cho khớp trạng thái thực tế của engine (tránh kẹt UI).
+  document.addEventListener('visibilitychange', () => {
+    if (!synthSupported) return;
+    if (document.visibilityState === 'visible') {
+      if (!window.speechSynthesis.speaking && isSpeaking) {
+        stopKeepAlive();
+        setSpeakingUI(false, isPaused);
+      }
+    }
+  });
+
+  // ---------- Lưu âm thanh ra file (chỉ hoạt động trong bản APK native/Capacitor) ----------
+  function getNativeTtsPlugin() {
+    // Capacitor tự động bơm window.Capacitor khi chạy trong app APK đã build từ project này.
+    // Khi mở bằng trình duyệt thường (Chrome/testing), window.Capacitor sẽ không tồn tại.
+    if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.TtsFileSaver) {
+      return window.Capacitor.Plugins.TtsFileSaver;
+    }
+    return null;
+  }
+
+  function setSaveButtonState(state) {
+    // state: 'idle' | 'processing' | 'disabled'
+    btnSaveAudio.classList.toggle('processing', state === 'processing');
+    btnSaveAudio.disabled = state === 'processing';
+    if (state === 'processing') {
+      btnSaveAudio.textContent = '⏳ Đang tạo file âm thanh...';
+    } else {
+      btnSaveAudio.textContent = '💾 Lưu âm thanh (file WAV)';
+    }
+  }
+
+  btnSaveAudio.addEventListener('click', async () => {
+    const text = textInput.value;
+    if (!text || !text.trim()) {
+      showToast('Vui lòng nhập văn bản trước khi lưu âm thanh.', true);
+      return;
+    }
+
+    const plugin = getNativeTtsPlugin();
+    if (!plugin) {
+      showToast('Tính năng lưu file chỉ hoạt động trong bản APK đã đóng gói (không dùng được khi mở bằng trình duyệt thường).', true);
+      return;
+    }
+
+    const voice = getSelectedVoice();
+
+    try {
+      setSaveButtonState('processing');
+      const result = await plugin.synthesizeToFile({
+        text: text,
+        voiceName: voice ? voice.name : '',
+        lang: voice ? voice.lang : 'vi-VN',
+        rate: parseFloat(rateSelect.value),
+        pitch: parseFloat(pitchSelect.value)
+      });
+
+      setSaveButtonState('idle');
+
+      if (result && result.uri) {
+        showToast('Đã lưu file âm thanh: ' + (result.fileName || 'audio.wav'));
+        // Mở hộp thoại chia sẻ / lưu ngay sau khi tạo xong (tùy chọn, không bắt buộc)
+        try {
+          await plugin.shareFile({ uri: result.uri, fileName: result.fileName || 'audio.wav' });
+        } catch (shareErr) {
+          // Người dùng hủy chia sẻ không phải lỗi nghiêm trọng, bỏ qua
+        }
+      } else {
+        showToast('Không nhận được đường dẫn file sau khi tạo âm thanh.', true);
+      }
+    } catch (err) {
+      setSaveButtonState('idle');
+      const msg = (err && err.message) ? err.message : String(err);
+      showToast('Lỗi khi tạo file âm thanh: ' + msg, true);
+    }
+  });
+
+
+  function init() {
+    updateCharCount();
+
+    if (!synthSupported) {
+      showToast('Thiết bị hoặc trình duyệt của bạn không hỗ trợ Web Speech API.', true);
+      btnSpeak.disabled = true;
+      btnReplay.disabled = true;
+      statusText.textContent = 'Không hỗ trợ đọc giọng nói';
+      return;
+    }
+
+    if (!loadVoices()) {
+      // Một số trình duyệt Android cần chờ sự kiện voiceschanged
+      window.speechSynthesis.onvoiceschanged = () => {
+        loadVoices();
+      };
+      // fallback: thử lại sau 500ms phòng khi sự kiện không bắn
+      setTimeout(() => { if (allVoices.length === 0) loadVoices(); }, 500);
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', init);
+  if (document.readyState === 'complete' || document.readyState === 'interactive') {
+    init();
+  }
+})();
+</script>
+</body>
+</html>
