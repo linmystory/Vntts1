@@ -1,9 +1,0 @@
-{
-  "appId": "com.docdoc.app",
-  "appName": "Đọc Văn Bản",
-  "webDir": "www",
-  "bundledWebRuntime": false,
-  "android": {
-    "allowMixedContent": false
-  }
-}
